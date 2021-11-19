@@ -4,7 +4,7 @@
 - jq
 - skim
 
-# Task lists
+# Features and TODO
 - [x] Install
 - [X] Update
 - [ ] Remove

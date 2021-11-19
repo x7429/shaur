@@ -1,6 +1,7 @@
 # requirements
 - curl
 - git
+- jq
 - skim
 
 # Task lists

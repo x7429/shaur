@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# https://minsw.github.io/fzf-color-picker/
+
+# export FZF_DEFAULT_OPTS=$FZF_DEFAULT_OPTS' --color=fg:#ffffff,bg:#111111,hl:#ffffff --color=fg+:#00a2ff,bg+:#111111,hl+:#00a2ff --color=info:#00a2ff,prompt:#dc143c,pointer:#00ff22 --color=marker:#00ff22,spinner:#DC143C,header:#dc143c'
+
+mkdir -p ~/.config/shaur && cd ~/.config/shaur || exit
+
+case $1 in
+	-y)
+		echo "[AUR database update]"
+		curl --url 'https://aur.archlinux.org/packages.gz' --create-dirs --output "packages.gz" >/dev/null && gunzip -f "packages.gz"
+	;;
+	-u)
+		for i in ~/.config/shaur/*
+		do
+			[ -d "$i" ] || break
+			cd "$i" || exit
+			echo "$i: " | awk -F '/' '{print $NF}' | tr -d "\n"
+			git pull
+		done
+	;;
+	-S)
+		! [ -f packages ] && echo "DB not found, type: $0 -u" && exit
+		name=$(sort packages | sk --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | grep {} | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp")
+
+		if [ "$name" ]; then
+			git clone https://aur.archlinux.org/"$name".git || exit
+			cd "$name" || exit
+			makepkg -si
+		fi
+	;;
+	*)
+		echo "Help"
+	;;
+esac

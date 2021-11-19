@@ -17,7 +17,7 @@ case $1 in
 		done
 	;;
 	-S)
-		! [ -f packages ] && echo "DB not found, type: $0 -y" && exit
+		! [ -f packages ] && echo "DB not found, type: $0 -u" && exit
 		name=$(sort packages | sk --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | grep {} | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp")
 
 		if [ "$name" ]; then

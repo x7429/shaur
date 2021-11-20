@@ -12,6 +12,6 @@
 
 # Installation
 
-```vim
+```sh
 git clone https://github.com/x7429/shaur && cd shaur && sudo make install
 ```

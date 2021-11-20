@@ -38,7 +38,7 @@ Operations:
 	"
 	;;		
 	*)
-		echo "-> invalid option "$1""
-		echo "use -h or --help for help"
+		echo "shaur -> invalid option $@"
+		echo "Try shaur -h or --help for more information"
 	;;
 esac

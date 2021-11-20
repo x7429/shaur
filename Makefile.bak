@@ -1,5 +1,7 @@
 SHELL := /bin/sh
 
+
+
 install:
 	@mkdir -p /usr/share/licenses/shaur
 	@cp ./LICENSE /usr/share/licenses/shaur

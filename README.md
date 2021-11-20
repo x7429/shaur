@@ -10,7 +10,7 @@
 - [X] Update
 - [ ] Remove
 
-# [Installation](#installation)
+# Installation
 
 ```vim
 git clone https://github.com/x7429/shaur && cd shaur && sudo make install

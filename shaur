@@ -2,6 +2,19 @@
 
 mkdir -p ~/.config/shaur && cd ~/.config/shaur || exit
 
+help () (
+	echo "Usage:
+shaur <operation> (you can use only one option) 
+
+Operations:
+	-h --help
+	-u --upgrade 		
+	-S --sync
+	-y --dbupdate"
+)
+
+[ ! "$*" ] && help && exit
+
 case $1 in
 	-y | --dbupdate)
 		echo "[AUR database update]"
@@ -27,15 +40,7 @@ case $1 in
 		fi
 	;;
 	-h | --help)
-		echo "Usage:
-	$0 <operation> (you can use only one option) 
-
-Operations:
-	-h --help
-	-u --upgrade 		
-	-S --sync
-	-y --dbupdate
-	"
+		help
 	;;		
 	*)
 		echo "shaur -> invalid option $*"

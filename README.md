@@ -1,6 +1,7 @@
 # requirements
 - curl
 - git
+- gunzip
 - jq
 - skim
 

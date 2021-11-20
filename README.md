@@ -12,4 +12,6 @@
 
 # [Installation](#installation)
 
-- git clone https://github.com/x7429/shaur && cd shaur && sudo make install
+```vim
+git clone https://github.com/x7429/shaur && cd shaur && sudo make install
+```

@@ -27,8 +27,7 @@ case $1 in
 		fi
 	;;
 	-h | --help)
-		echo "
-Usage:
+		echo "Usage:
 	$0 <operation> (you can use only one option) 
 
 Operations:

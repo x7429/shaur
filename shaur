@@ -3,11 +3,11 @@
 mkdir -p ~/.config/shaur && cd ~/.config/shaur || exit
 
 case $1 in
-	-y)
+	-y | --dbupdate)
 		echo "[AUR database update]"
 		curl --url 'https://aur.archlinux.org/packages.gz' --create-dirs --output "packages.gz" >/dev/null && gunzip -f "packages.gz"
 	;;
-	-u)
+	-u | --upgrade)
 		for i in ~/.config/shaur/*
 		do
 			[ -d "$i" ] || break
@@ -16,7 +16,7 @@ case $1 in
 			git pull
 		done
 	;;
-	-S)
+	-S | --sync)
 		! [ -f packages ] && echo "DB not found, type: $0 -y" && exit
 		name=$(sort packages | sk --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | grep {} | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp")
 
@@ -26,7 +26,20 @@ case $1 in
 			makepkg -si
 		fi
 	;;
+	-h | --help)
+		echo "
+Usage:
+	$0 <operation> (you can use only one option) 
+
+Operations:
+	-h --help
+	-u --upgrade 		
+	-S --sync
+	-y --dbupdate
+	"
+	;;		
 	*)
-		echo "Help"
+		echo "-> invalid option "$1""
+		echo "use -h or --help for help"
 	;;
 esac

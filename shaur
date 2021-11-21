@@ -19,6 +19,7 @@ case $1 in
 	-y | --dbupdate)
 		echo "[AUR database update]"
 		curl --url 'https://aur.archlinux.org/packages.gz' --create-dirs --output "packages.gz" >/dev/null && gunzip -f "packages.gz"
+		sort -o packages packages
 	;;
 	-u | --upgrade)
 		for i in ~/.config/shaur/*
@@ -31,7 +32,7 @@ case $1 in
 	;;
 	-S | --sync)
 		! [ -f packages ] && echo "DB not found, type: $0 -y" && exit
-		name=$(sort packages | sk --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | grep {} | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp")
+		name=$(sk --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | grep {} | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp" < packages)
 
 		if [ "$name" ]; then
 			git clone https://aur.archlinux.org/"$name".git || exit

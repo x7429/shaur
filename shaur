@@ -32,11 +32,15 @@ case $1 in
 	;;
 	-S | --sync)
 		! [ -f packages ] && echo "DB not found, type: $0 -y" && exit
-		name=$(sk --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | grep {} | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp" < packages)
+		name=$(sk --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp" < packages)
 
-		if [ "$name" ]; then
-			git clone https://aur.archlinux.org/"$name".git || exit
-			cd "$name" || exit
+		# fix
+		PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.PackageBase')
+		PackageBase=$(echo $PackageBase | tr -d "\"")
+
+		if [ "$PackageBase" ]; then
+			git clone https://aur.archlinux.org/$PackageBase.git || exit
+			cd "$PackageBase" || exit
 			makepkg -si
 		fi
 	;;

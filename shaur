@@ -18,7 +18,7 @@ Operations:
 case $1 in
 	-y | --dbupdate)
 		echo "[AUR database update]"
-		curl --url 'https://aur.archlinux.org/packages.gz' --create-dirs --output "packages.gz" >/dev/null && gunzip -f "packages.gz"
+		curl -s --url 'https://aur.archlinux.org/packages.gz' --create-dirs --output "packages.gz" >/dev/null && gunzip -f "packages.gz"
 		sort -o packages packages
 	;;
 	-u | --upgrade)

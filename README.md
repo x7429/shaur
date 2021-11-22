@@ -10,7 +10,7 @@
 - [X] Update
 - [X] Upgrade
 - [ ] Remove
-- [ ] cleanUpcache
+- [ ] CleanUp cache
 
 # Installation
 

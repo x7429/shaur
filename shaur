@@ -2,6 +2,69 @@
 
 mkdir -p ~/.config/shaur && cd ~/.config/shaur || exit
 
+dbupdate () (
+	echo "[AUR database update]"
+	curl -s --url 'https://aur.archlinux.org/packages.gz' --create-dirs --output "packages.gz" >/dev/null && gunzip -f "packages.gz"
+	sort -o packages packages
+)
+
+upgrade () (
+	dbupdate
+
+	i=1
+	pacman -Qm > AurInstalled
+	
+	while [[ $i -le $(eval "cat AurInstalled | wc -l") ]]; do
+		name=$(cat AurInstalled | tail -$i | head -n1 | awk {'print $1'})
+		version=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.Version')	
+		version=$(echo "$version" | tr -d "\"")
+		versionInstalled=$(cat AurInstalled | tail -$i | head -n1 | awk {'print $2'})
+		
+		if [[ $versionInstalled != $version ]]; then
+			echo " "
+			echo "upgrade $name"
+			echo "from $versionInstalled to -> $version"
+			PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.PackageBase')
+			PackageBase=$(echo "$PackageBase" | tr -d "\"")
+			echo "$PackageBase"
+			
+			if [ -d "$PackageBase" ]; then
+				if [ "$PackageBase" ]; then
+					cd "$PackageBase" || exit
+					git pull
+					makepkg -si
+					cd ..
+				fi
+			else
+				if [ "$PackageBase" ]; then
+					git clone https://aur.archlinux.org/"$PackageBase".git || exit
+					cd "$PackageBase" || exit
+					makepkg -si
+					cd ..
+				fi
+			fi
+		fi	
+		((i++))
+	done
+)
+
+sync () (
+	! [ -f packages ] && echo "DB not found, type: shaur -y" && exit
+	name=$(sk --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp" < packages)
+	
+	# fix
+	PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.PackageBase')
+	PackageBase=$(echo "$PackageBase" | tr -d "\"")
+	if [ "$PackageBase" ]; then
+		if [[ -d "$PackageBase" ]]; then
+			rm -rf "$PackageBase"
+		fi
+		git clone https://aur.archlinux.org/"$PackageBase".git || exit
+		cd "$PackageBase" || exit
+		makepkg -si
+	fi
+)
+
 help () (
 	echo "Usage:
 shaur <operation> (you can use only one option) 
@@ -17,32 +80,13 @@ Operations:
 
 case $1 in
 	-y | --dbupdate)
-		echo "[AUR database update]"
-		curl -s --url 'https://aur.archlinux.org/packages.gz' --create-dirs --output "packages.gz" >/dev/null && gunzip -f "packages.gz"
-		sort -o packages packages
+		dbupdate
 	;;
 	-u | --upgrade)
-		for i in ~/.config/shaur/*
-		do
-			[ -d "$i" ] || break
-			cd "$i" || exit
-			echo "$i: " | awk -F '/' '{print $NF}' | tr -d "\n"
-			git pull
-		done
+		upgrade
 	;;
 	-S | --sync)
-		! [ -f packages ] && echo "DB not found, type: $0 -y" && exit
-		name=$(sk --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp" < packages)
-
-		# fix
-		PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.PackageBase')
-		PackageBase=$(echo $PackageBase | tr -d "\"")
-
-		if [ "$PackageBase" ]; then
-			git clone https://aur.archlinux.org/$PackageBase.git || exit
-			cd "$PackageBase" || exit
-			makepkg -si
-		fi
+		sync
 	;;
 	-h | --help)
 		help

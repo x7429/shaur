@@ -6,11 +6,11 @@
 - skim
 
 # Features and TODO
-- [x] Install
-- [X] Update
-- [X] Upgrade
-- [ ] Remove
-- [ ] CleanUp cache
+- [x] Install 
+- [X] Update database
+- [X] Upgrade 
+- [X] Remove
+- [ ] Remove all cached packages
 
 # Installation
 

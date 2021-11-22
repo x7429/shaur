@@ -21,7 +21,8 @@ upgrade () (
 		version=$(echo "$version" | tr -d "\"")
 		versionInstalled=$(cat AurInstalled | tail -$i | head -n1 | awk {'print $2'})
 		
-		if [[ $versionInstalled != $version ]]; then
+		if [[ ${version} && ${versionInstalled} && $(vercmp "${versionInstalled}" "${version}") -lt 0 ]]; then
+				
 			echo " "
 			echo "upgrade $name"
 			echo "from $versionInstalled to -> $version"
@@ -77,13 +78,12 @@ remove () {
 
 help () (
 	echo "Usage:
-	shaur <operation> (you can use only one option) 
+shaur <operation> (you can use only one option) 
 
 Operations:
 	-h --help
 	-u --upgrade 		
 	-S --sync
-	-R --remove
 	-y --dbupdate"
 )
 

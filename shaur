@@ -13,7 +13,8 @@ upgrade () (
 
 	i=1
 	pacman -Qm > AurInstalled
-	
+	sort -o AurInstalled AurInstalled
+
 	while [[ $i -le $(eval "cat AurInstalled | wc -l") ]]; do
 		name=$(cat AurInstalled | tail -$i | head -n1 | awk {'print $1'})
 		version=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.Version')	
@@ -65,6 +66,15 @@ sync () (
 	fi
 )
 
+remove () {
+	pacman -Qqm > AurInstalled
+	sort -o AurInstalled AurInstalled
+
+	name=$(sk --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp" < AurInstalled )
+	[ "$name" ] && sudo pacman -R "$name"
+	
+}
+
 help () (
 	echo "Usage:
 shaur <operation> (you can use only one option) 
@@ -87,6 +97,9 @@ case $1 in
 	;;
 	-S | --sync)
 		sync
+	;;
+	-R | --remove)
+		remove 
 	;;
 	-h | --help)
 		help

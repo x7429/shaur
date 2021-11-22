@@ -7,8 +7,10 @@
 
 # Features and TODO
 - [x] Install
+- [X] Update
 - [X] Upgrade
 - [ ] Remove
+- [ ] cleanUpcache
 
 # Installation
 

@@ -77,12 +77,13 @@ remove () {
 
 help () (
 	echo "Usage:
-shaur <operation> (you can use only one option) 
+	shaur <operation> (you can use only one option) 
 
 Operations:
 	-h --help
 	-u --upgrade 		
 	-S --sync
+	-R --remove
 	-y --dbupdate"
 )
 

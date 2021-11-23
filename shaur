@@ -72,7 +72,7 @@ remove () {
 
 removeCache () {
 	echo "Cache directory: ~/config/shaur"
-	echo -n "do you want to remove ALL cached packages? [y/N]: "
+	printf 'do you want to remove ALL cached packages? [y/N]: '
 	read -r rep
 
 	case $rep in

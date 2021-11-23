@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 mkdir -p ~/.config/shaur && cd ~/.config/shaur || exit
 
 dbupdate () (
@@ -11,25 +13,18 @@ dbupdate () (
 upgrade () (
 	dbupdate
 	
-	isUpgraded=0;
-	i=1
 	pacman -Qm > AurInstalled
 	sort -o AurInstalled AurInstalled
 
-	while [[ $i -le $(eval "cat AurInstalled | wc -l") ]]; do
-		name=$(cat AurInstalled | tail -$i | head -n1 | awk {'print $1'})
-		version=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.Version')	
-		version=$(echo "$version" | tr -d "\"")
-		versionInstalled=$(cat AurInstalled | tail -$i | head -n1 | awk {'print $2'})
+	while read x; do
+		name=$(echo "$x" | awk {'print $1'})
+		version=$(echo "$x" | awk {'print $2'})
+		vRemote=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.Version' | tr -d "\"")
 		
-		if [[ ${version} && ${versionInstalled} && $(vercmp "${versionInstalled}" "${version}") -lt 0 ]]; then
-				
-			echo " "
-			echo "upgrade $name"
-			echo "from $versionInstalled to -> $version"
-			PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.PackageBase')
-			PackageBase=$(echo "$PackageBase" | tr -d "\"")
-			echo "$PackageBase"
+		if [[ ${vRemote} && ${version} && $(vercmp "${version}" "${vRemote}") -lt 0 ]]; then
+			echo "[$name] $version to -> $vRemote"
+			
+			PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.PackageBase' | tr -d "\"")
 			
 			if [ -d "$PackageBase" ]; then
 				if [ "$PackageBase" ]; then
@@ -37,7 +32,6 @@ upgrade () (
 					git pull
 					makepkg -si
 					cd ..
-					isUpgraded=1;
 				fi
 			else
 				if [ "$PackageBase" ]; then
@@ -45,15 +39,10 @@ upgrade () (
 					cd "$PackageBase" || exit
 					makepkg -si
 					cd ..
-					isUpgraded=1;
 				fi
 			fi
-		fi	
-		((i++))
-	done
-	if [[ "$isUpgraded" == 0 ]]; then
-		echo "nothing to upgrade..."
-	fi
+		fi
+	done < AurInstalled
 )
 
 sync () (
@@ -61,8 +50,7 @@ sync () (
 	name=$(sk --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp" < packages)
 	
 	# fix
-	PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.PackageBase')
-	PackageBase=$(echo "$PackageBase" | tr -d "\"")
+	PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.PackageBase' | tr -d "\"")
 	if [ "$PackageBase" ]; then
 		if [[ -d "$PackageBase" ]]; then
 			rm -rf "$PackageBase"

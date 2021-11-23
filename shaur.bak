@@ -1,7 +1,5 @@
 #!/bin/sh
 
-# jq -r per rimuovere le "" dall'output
-
 set -e
 
 mkdir -p ~/.config/shaur && cd ~/.config/shaur || exit

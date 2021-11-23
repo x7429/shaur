@@ -7,11 +7,10 @@
 
 # Features and TODO
 - [X] Update database
-- [x] Install 
-- [X] Upgrade 
+- [x] Install
 - [X] Remove
+- [X] Upgrade
 - [X] Remove all cached packages
-- [X] multiple selection
 
 # Installation
 

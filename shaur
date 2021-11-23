@@ -19,12 +19,12 @@ upgrade () (
 	while read -r x; do
 		name=$(echo "$x" | awk '{print $1}')
 		version=$(echo "$x" | awk '{print $2}')
-		vRemote=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.Version' | tr -d "\"")
+		vRemote=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.Version')
 		
 		if [ $(vercmp "${version}" "${vRemote}") -lt 0 ]; then
 			echo "[$name] $version to -> $vRemote"
 			
-			PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.PackageBase' | tr -d "\"")
+			PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.PackageBase')
 			
 			if [ -d "$PackageBase" ]; then
 				if [ "$PackageBase" ]; then
@@ -51,8 +51,7 @@ sync () (
 
 
 	for i in $name; do
-		# fix
-		PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$i" | jq '.results[]' | jq "select(.Name==\"$i\")" | jq '.PackageBase' | tr -d "\"")
+		PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$i" | jq '.results[]' | jq "select(.Name==\"$i\")" | jq '.PackageBase')
 		if [ "$PackageBase" ]; then
 			if [ -d "$PackageBase" ]; then
 				rm -rf "$PackageBase"

@@ -36,7 +36,95 @@ upgrade () (
 	done < AurInstalled
 )
 
-sync () (
+sync () (#!/bin/sh
+2
+​
+3
+# jq -r per rimuovere le "" dall'output
+4
+​
+5
+set -e
+6
+​
+7
+mkdir -p ~/.config/shaur && cd ~/.config/shaur || exit
+8
+​
+9
+dbupdate () (
+10
+        echo "[AUR database update]"
+11
+        curl -s --url 'https://aur.archlinux.org/packages.gz' --create-dirs --output "packages.gz" >/dev/null && gunzip -f "packages.gz"
+12
+        sort -o packages packages
+13
+)
+14
+​
+15
+upgrade () (
+16
+        dbupdate
+17
+        
+18
+        pacman -Qm > AurInstalled
+19
+        sort -o AurInstalled AurInstalled
+20
+​
+21
+        while read -r x; do
+22
+                name=$(echo "$x" | awk '{print $1}')
+23
+                version=$(echo "$x" | awk '{print $2}')
+24
+                vRemote=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.Version')
+25
+                
+26
+                if [ $(vercmp "${version}" "${vRemote}") -lt 0 ]; then
+27
+                        echo "[$name] $version to -> $vRemote"
+28
+                        
+29
+                        PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.PackageBase')
+30
+                        
+31
+                        # fix
+32
+                        if [ -d "$PackageBase" ]; then
+33
+                                if [ "$PackageBase" ]; then
+34
+                                        cd "$PackageBase" || exit
+35
+                                        git pull
+36
+                                        makepkg -si
+37
+                                        cd ..
+38
+                                fi
+39
+                        else
+40
+                                if [ "$PackageBase" ]; then
+41
+                                        git clone https://aur.archlinux.org/"$PackageBase".git || exit
+42
+                                        cd "$PackageBase" || exit
+43
+                                        makepkg -si
+44
+                                        cd ..
+45
+                                fi
 	! [ -f packages ] && echo "DB not found, type: shaur -y" && exit
 	
 	op=$(echo "$1" | cut -d " " -f2-)

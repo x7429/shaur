@@ -10,6 +10,7 @@ dbupdate () (
 
 upgrade () (
 	dbupdate
+	
 	isUpgraded=0;
 	i=1
 	pacman -Qm > AurInstalled
@@ -22,6 +23,7 @@ upgrade () (
 		versionInstalled=$(cat AurInstalled | tail -$i | head -n1 | awk {'print $2'})
 		
 		if [[ ${version} && ${versionInstalled} && $(vercmp "${versionInstalled}" "${version}") -lt 0 ]]; then
+				
 			echo " "
 			echo "upgrade $name"
 			echo "from $versionInstalled to -> $version"
@@ -49,7 +51,6 @@ upgrade () (
 		fi	
 		((i++))
 	done
-	
 	if [[ "$isUpgraded" == 0 ]]; then
 		echo "nothing to upgrade..."
 	fi
@@ -62,7 +63,6 @@ sync () (
 	# fix
 	PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.PackageBase')
 	PackageBase=$(echo "$PackageBase" | tr -d "\"")
-	
 	if [ "$PackageBase" ]; then
 		if [[ -d "$PackageBase" ]]; then
 			rm -rf "$PackageBase"
@@ -74,11 +74,12 @@ sync () (
 )
 
 remove () {
+	echo "$option"
 	pacman -Qqm > AurInstalled
 	sort -o AurInstalled AurInstalled
 
 	name=$(sk --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp" < AurInstalled )
-	[ "$name" ] && sudo pacman -R "$name"
+	[ "$name" ] && sudo pacman "$option" "$name"
 	
 }
 
@@ -86,7 +87,6 @@ removeCache () {
 	echo "Cache directory: ~/config/shaur"
 	echo "do you want to remove ALL cached packages? [y/N]"
 	read rep
-	
 	if [[ "$rep" == "n" || "$rep" == "no" || "$rep" == "N" || "$rep" == "NO"  || "$rep" == "No"  || "$rep" == "nO" ]];then
 		echo "interrupting"
 	else
@@ -95,13 +95,17 @@ removeCache () {
 	
 }
 
+version () (
+	echo "shaur version: *"
+)
+
 help () (
 	echo "Usage:
 shaur <operation> (you can use only one option) 
 
 Operations:
 	-h --help
-	-u --upgrade 		
+	-U --upgrade 		
 	-S --sync
 	-R --remove
 	-C --removeCache
@@ -109,22 +113,25 @@ Operations:
 )
 
 [ ! "$*" ] && help && exit
-
+option="$1"
 case $1 in
 	-y | --dbupdate)
 		dbupdate
 	;;
-	-u | --upgrade)
+	-U | --upgrade)
 		upgrade
 	;;
 	-S | --sync)
 		sync
 	;;
-	-R | --remove)
+	-R* | --remove)
 		remove 
 	;;
 	-C | --removeCache )
 		removeCache
+	;;
+	-V | --version )
+		version
 	;;
 	-h | --help)
 		help

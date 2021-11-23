@@ -17,8 +17,8 @@ upgrade () (
 	sort -o AurInstalled AurInstalled
 
 	while read -r x; do
-		name=$(echo "$x" | awk {'print $1'})
-		version=$(echo "$x" | awk {'print $2'})
+		name=$(echo "$x" | awk '{print $1}')
+		version=$(echo "$x" | awk '{print $2}')
 		vRemote=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.Version' | tr -d "\"")
 		
 		if [[ ${vRemote} && ${version} && $(vercmp "${version}" "${vRemote}") -lt 0 ]]; then

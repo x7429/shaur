@@ -10,7 +10,9 @@
 - [X] Update database
 - [X] Upgrade 
 - [X] Remove
-- [ ] Remove all cached packages
+- [X] Remove all cached packages
+- [ ] multiple selection
+- [ ] subfunction
 
 # Installation
 

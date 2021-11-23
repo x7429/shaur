@@ -11,7 +11,7 @@
 - [X] Upgrade 
 - [X] Remove
 - [X] Remove all cached packages
-- [ ] multiple selection
+- [X] multiple selection
 
 # Installation
 

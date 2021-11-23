@@ -109,6 +109,7 @@ Operations:
 	-S --sync
 	-R --remove
 	-C --removeCache
+	-V --version
 	-y --dbupdate"
 )
 

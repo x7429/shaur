@@ -74,12 +74,15 @@ removeCache () {
 	echo "Cache directory: ~/config/shaur"
 	echo "do you want to remove ALL cached packages? [y/N]"
 	read -r rep
-	if [[ "$rep" = "n" || "$rep" = "no" || "$rep" = "N" || "$rep" = "NO"  || "$rep" = "No"  || "$rep" = "nO" ]]; then
-		echo "interrupting"
-	else
-		rm -rf -- */
-	fi
-	
+
+	case $rep in
+		([y]|[Y]|"")
+			rm -rf -- */
+		;;
+		(*)
+			echo "Interrupting"
+		;;
+	esac
 }
 
 version () (

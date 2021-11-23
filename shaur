@@ -48,17 +48,20 @@ upgrade () (
 sync () (
 	! [ -f packages ] && echo "DB not found, type: shaur -y" && exit
 	name=$(sk -m --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp" < packages)
-	
-	# fix
-	PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.PackageBase' | tr -d "\"")
-	if [ "$PackageBase" ]; then
-		if [ -d "$PackageBase" ]; then
-			rm -rf "$PackageBase"
+
+
+	for i in $(echo "$name") ; do
+		# fix
+		PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$i" | jq '.results[]' | jq "select(.Name==\"$i\")" | jq '.PackageBase' | tr -d "\"")
+		if [ "$PackageBase" ]; then
+			if [ -d "$PackageBase" ]; then
+				rm -rf "$PackageBase"
+			fi
+			git clone https://aur.archlinux.org/"$PackageBase".git || exit
+			cd "$PackageBase" || exit
+			makepkg -si
 		fi
-		git clone https://aur.archlinux.org/"$PackageBase".git || exit
-		cd "$PackageBase" || exit
-		makepkg -si
-	fi
+	done
 )
 
 remove () {
@@ -66,8 +69,10 @@ remove () {
 	sort -o AurInstalled AurInstalled
 
 	name=$(sk -m --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp" < AurInstalled )
-	[ "$name" ] && sudo pacman "$1" "$name"
 	
+	for i in $(echo "$name") ; do
+		[ "$i" ] && sudo pacman --noconfirm "$1" "$i"
+	done
 }
 
 removeCache () {
@@ -91,7 +96,7 @@ version () (
 
 help () (
 	echo "Usage:
-shaur <operation> (you can use only one option) 
+	shaur <operation> (you can use only one option) 
 
 Operations:
 	-h --help

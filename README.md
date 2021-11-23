@@ -12,7 +12,6 @@
 - [X] Remove
 - [X] Remove all cached packages
 - [ ] multiple selection
-- [ ] subfunction
 
 # Installation
 

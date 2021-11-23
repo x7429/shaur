@@ -95,7 +95,7 @@ help () (
 
 Operations:
 	-h --help
-	-U --upgrade 		
+	-U --upgrade
 	-S --sync
 	-R --remove
 	-C --removeCache

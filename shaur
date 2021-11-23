@@ -16,12 +16,12 @@ upgrade () (
 	pacman -Qm > AurInstalled
 	sort -o AurInstalled AurInstalled
 
-	while read x; do
+	while read -r x; do
 		name=$(echo "$x" | awk {'print $1'})
 		version=$(echo "$x" | awk {'print $2'})
 		vRemote=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.Version' | tr -d "\"")
 		
-		if [[ ${vRemote} && ${version} && $(vercmp "${version}" "${vRemote}") -lt 0 ]]; then
+		if [ ${vRemote} && ${version} && $(vercmp "${version}" "${vRemote}") -lt 0 ]; then
 			echo "[$name] $version to -> $vRemote"
 			
 			PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.PackageBase' | tr -d "\"")
@@ -38,7 +38,7 @@ upgrade () (
 					git clone https://aur.archlinux.org/"$PackageBase".git || exit
 					cd "$PackageBase" || exit
 					makepkg -si
-					cd ..
+					]cd ..
 				fi
 			fi
 		fi
@@ -47,12 +47,12 @@ upgrade () (
 
 sync () (
 	! [ -f packages ] && echo "DB not found, type: shaur -y" && exit
-	name=$(sk --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp" < packages)
+	name=$(sk -m --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp" < packages)
 	
 	# fix
 	PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.PackageBase' | tr -d "\"")
 	if [ "$PackageBase" ]; then
-		if [[ -d "$PackageBase" ]]; then
+		if [ -d "$PackageBase" ]; then
 			rm -rf "$PackageBase"
 		fi
 		git clone https://aur.archlinux.org/"$PackageBase".git || exit
@@ -62,23 +62,22 @@ sync () (
 )
 
 remove () {
-	echo "$option"
 	pacman -Qqm > AurInstalled
 	sort -o AurInstalled AurInstalled
 
-	name=$(sk --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp" < AurInstalled )
-	[ "$name" ] && sudo pacman "$option" "$name"
+	name=$(sk -m --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp" < AurInstalled )
+	[ "$name" ] && sudo pacman "$1" "$name"
 	
 }
 
 removeCache () {
 	echo "Cache directory: ~/config/shaur"
 	echo "do you want to remove ALL cached packages? [y/N]"
-	read rep
-	if [[ "$rep" == "n" || "$rep" == "no" || "$rep" == "N" || "$rep" == "NO"  || "$rep" == "No"  || "$rep" == "nO" ]];then
+	read -r rep
+	if [[ "$rep" = "n" || "$rep" = "no" || "$rep" = "N" || "$rep" = "NO"  || "$rep" = "No"  || "$rep" = "nO" ]]; then
 		echo "interrupting"
 	else
-		rm -rf */
+		rm -rf -- */
 	fi
 	
 }
@@ -102,7 +101,6 @@ Operations:
 )
 
 [ ! "$*" ] && help && exit
-option="$1"
 case $1 in
 	-y | --dbupdate)
 		dbupdate
@@ -114,7 +112,7 @@ case $1 in
 		sync
 	;;
 	-R* | --remove)
-		remove 
+		remove "$1"
 	;;
 	-C | --removeCache )
 		removeCache

@@ -6,8 +6,8 @@
 - skim
 
 # Features and TODO
-- [x] Install 
 - [X] Update database
+- [x] Install 
 - [X] Upgrade 
 - [X] Remove
 - [X] Remove all cached packages

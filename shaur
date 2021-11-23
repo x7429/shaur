@@ -1,7 +1,5 @@
 #!/bin/sh
 
-# jq -r per rimuovere le "" dall'output
-
 set -e
 
 mkdir -p ~/.config/shaur && cd ~/.config/shaur || exit
@@ -21,28 +19,18 @@ upgrade () (
 	while read -r x; do
 		name=$(echo "$x" | awk '{print $1}')
 		version=$(echo "$x" | awk '{print $2}')
-		vRemote=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.Version')
+		vRemote=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq -r '.Version')
 		
 		if [ $(vercmp "${version}" "${vRemote}") -lt 0 ]; then
 			echo "[$name] $version to -> $vRemote"
 			
 			PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.PackageBase')
 			
-			# fix
-			if [ -d "$PackageBase" ]; then
-				if [ "$PackageBase" ]; then
-					cd "$PackageBase" || exit
-					git pull
-					makepkg -si
-					cd ..
-				fi
-			else
-				if [ "$PackageBase" ]; then
-					git clone https://aur.archlinux.org/"$PackageBase".git || exit
-					cd "$PackageBase" || exit
-					makepkg -si
-					cd ..
-				fi
+			if [ "$PackageBase" ]; then
+				[ -d "$PackageBase" ] && rm -rf "$PackageBase"
+				git clone https://aur.archlinux.org/"$PackageBase".git || exit
+				cd "$PackageBase" || exit
+				makepkg -si
 			fi
 		fi
 	done < AurInstalled
@@ -50,15 +38,25 @@ upgrade () (
 
 sync () (
 	! [ -f packages ] && echo "DB not found, type: shaur -y" && exit
-	name=$(sk -m --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp" < packages)
+	
+	op=$(echo "$1" | cut -d " " -f2-)
+
+	if [[ "$1" == "$op" ]]; then
+		name=$(sk -m --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp" < packages)
+	else
+		name="$op"
+	fi
 
 	for i in $name; do
-		PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$i" | jq '.results[]' | jq "select(.Name==\"$i\")" | jq '.PackageBase' | tr -d "\"")
+		PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$i" | jq '.results[]' | jq "select(.Name==\"$i\")" | jq -r '.PackageBase')
 		if [ "$PackageBase" ]; then
 			[ -d "$PackageBase" ] && rm -rf "$PackageBase"
 			git clone https://aur.archlinux.org/"$PackageBase".git || exit
 			cd "$PackageBase" || exit
 			makepkg -si
+		else
+			echo ""
+			echo "ERROR 404: $i PACKAGES NOT FOUND..."
 		fi
 	done
 )
@@ -67,8 +65,14 @@ remove () {
 	pacman -Qqm > AurInstalled
 	sort -o AurInstalled AurInstalled
 
-	name=$(sk -m --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp" < AurInstalled )
-	
+	op=$(echo "$2" | cut -d " " -f2-)
+
+	if [[ "$1" == "$op" ]]; then
+		name=$(sk -m --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp" < AurInstalled )
+	else
+		name="$op"
+	fi
+		
 	# fix
 	for i in $name; do sudo pacman --noconfirm "$1" "$i"; done
 }
@@ -84,11 +88,32 @@ removeCache () {
 	esac
 }
 
+query () (
+	pacman -Qqm > AurInstalled
+	sort -o AurInstalled AurInstalled
+
+	pacman -Qqm > AurInstalled
+	sort -o AurInstalled AurInstalled
+
+	op=$(echo "$1" | cut -d " " -f2-)
+
+	if [[ "$1" == "$op" ]]; then
+		name=$(sk -m --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp" < AurInstalled )
+	else
+		name="$op"
+	fi
+
+	for i in $(echo "$name") ; do
+		curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg="$i"" | jq '.results[]' | jq "select(.Name==\"$name\")" > tmp
+		cat ./tmp
+	done
+)
+
 version () (
 	echo "shaur version: *"
 )
 
-help () (
+myHelp () (
 	echo "Usage:
 	shaur <operation> (you can use only one option) 
 
@@ -98,6 +123,7 @@ Operations:
 	-S --sync
 	-R --remove
 	-C --removeCache
+	-Q --query
 	-V --version
 	-y --dbupdate"
 )
@@ -107,11 +133,12 @@ Operations:
 case $1 in
 	-y | --dbupdate) dbupdate ;;
 	-U | --upgrade) upgrade ;;
-	-S | --sync) sync ;;
-	-R*| --remove) remove "$1" ;;
+	-S | --sync) sync "$*" ;;
+	-R*| --remove) remove "$1" "$*" ;;
 	-C | --removeCache ) removeCache ;;
+	-Q | --query ) query "$*" ;;
 	-V | --version ) version ;;
-	-h | --help) help ;;
+	-h | --help) myHelp ;;
 	*)
 		echo "shaur -> invalid option $*"
 		echo "Try shaur -h or --help for more information"

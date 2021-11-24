@@ -21,7 +21,7 @@ upgrade () (
 		version=$(echo "$x" | awk '{print $2}')
 		vRemote=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq -r '.Version')
 		
-		if [ $(vercmp "${version}" "${vRemote}") -lt 0 ]; then
+		if [ "$(vercmp "${version}" "${vRemote}")" -lt 0 ]; then
 			echo "[$name] $version to -> $vRemote"
 			
 			PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.PackageBase')
@@ -41,7 +41,7 @@ sync () (
 	
 	op=$(echo "$1" | cut -d " " -f2-)
 
-	if [[ "$1" == "$op" ]]; then
+	if [ "$1" = "$op" ]; then
 		name=$(sk -m --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp" < packages)
 	else
 		name="$op"
@@ -67,7 +67,7 @@ remove () {
 
 	op=$(echo "$2" | cut -d " " -f2-)
 
-	if [[ "$1" == "$op" ]]; then
+	if [ "$1" = "$op" ]; then
 		name=$(sk -m --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp" < AurInstalled )
 	else
 		name="$op"
@@ -94,13 +94,13 @@ query () (
 
 	op=$(echo "$1" | cut -d " " -f2-)
 
-	if [[ "$1" == "$op" ]]; then
+	if [ "$1" = "$op" ]; then
 		name=$(sk -m --bind change:top --layout=reverse --preview "curl -s \"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=\"{}\"\" | jq '.results[]' > tmp && jq 'select(.Name==\"{}\")' < tmp" < AurInstalled )
 	else
 		name="$op"
 	fi
 
-	for i in $(echo "$name") ; do
+	for i in $name; do
 		curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg="$i"" | jq '.results[]' | jq "select(.Name==\"$i\")" > tmp
 		cat ./tmp
 	done

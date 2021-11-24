@@ -53,9 +53,10 @@ sync () (
 			[ -d "$PackageBase" ] && rm -rf "$PackageBase"
 			git clone https://aur.archlinux.org/"$PackageBase".git || exit
 			cd "$PackageBase" || exit
+			key=$(grep '^validpgpkeys' -m1 < PKGBUILD | tr -d "validgpkeys=()")
+			[ "$key" ] && gpg --recv-keys "$key"
 			makepkg -si
 		else
-			echo ""
 			echo "ERROR 404: $i PACKAGES NOT FOUND..."
 		fi
 	done
@@ -101,7 +102,7 @@ query () (
 	fi
 
 	for i in $name; do
-		curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg="$i"" | jq '.results[]' | jq "select(.Name==\"$i\")" > tmp
+		curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$i" | jq '.results[]' | jq "select(.Name==\"$i\")" > tmp
 		cat ./tmp
 	done
 )

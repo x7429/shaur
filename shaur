@@ -101,7 +101,7 @@ query () (
 	fi
 
 	for i in $(echo "$name") ; do
-		curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg="$i"" | jq '.results[]' | jq "select(.Name==\"$name\")" > tmp
+		curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg="$i"" | jq '.results[]' | jq "select(.Name==\"$i\")" > tmp
 		cat ./tmp
 	done
 )

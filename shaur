@@ -24,13 +24,15 @@ upgrade () (
 		if [ "$(vercmp "${version}" "${vRemote}")" -lt 0 ]; then
 			echo "[$name] $version to -> $vRemote"
 			
-			PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq '.PackageBase')
+			PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq -r '.PackageBase')
 			
 			if [ "$PackageBase" ]; then
 				[ -d "$PackageBase" ] && rm -rf "$PackageBase"
-				git clone https://aur.archlinux.org/"$PackageBase".git || exit
+				git clone "https://aur.archlinux.org/$PackageBase.git" || exit
 				cd "$PackageBase" || exit
-				makepkg -si
+
+				# improve
+				sudo pacman -U *.zst
 			fi
 		fi
 	done < AurInstalled
@@ -74,7 +76,7 @@ remove () {
 		name="$op"
 	fi
 		
-	# fix
+	# improve
 	for i in $name; do sudo pacman --noconfirm "$1" "$i"; done
 }
 
@@ -111,7 +113,7 @@ version () (
 	echo "shaur version: *"
 )
 
-myHelp () (
+getHelp() (
 	echo "Usage:
 	shaur <operation> (you can use only one option) 
 
@@ -126,7 +128,7 @@ Operations:
 	-y --dbupdate"
 )
 
-[ ! "$*" ] && help && exit
+[ ! "$*" ] && getHelp && exit
 
 case $1 in
 	-y | --dbupdate) dbupdate ;;
@@ -136,7 +138,7 @@ case $1 in
 	-C | --removeCache ) removeCache ;;
 	-Q | --query ) query "$*" ;;
 	-V | --version ) version ;;
-	-h | --help) myHelp ;;
+	-h | --help) getHelp ;;
 	*)
 		echo "shaur -> invalid option $*"
 		echo "Try shaur -h or --help for more information"

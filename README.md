@@ -8,7 +8,7 @@
 # Features and TODO
 - [X] Update database
 - [x] Install
-- [] Request to install missing dependencies
+- [ ] Request to install missing dependencies
 - [X] Remove
 - [X] Upgrade
 - [X] Remove all cached packages

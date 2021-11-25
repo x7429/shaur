@@ -32,7 +32,7 @@ upgrade () (
 				cd "$PackageBase" || exit
 
 				# improve
-				sudo pacman -U *.zst
+				sudo pacman -U -- *.zst
 			fi
 		fi
 	done < AurInstalled

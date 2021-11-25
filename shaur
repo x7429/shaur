@@ -33,6 +33,8 @@ upgrade () (
 
 				# improve
 				sudo pacman -U -- *.zst
+
+				cd ..
 			fi
 		fi
 	done < AurInstalled

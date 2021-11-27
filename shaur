@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# upgradePackage
+
 set -e
 
 mkdir -p ~/.config/shaur && cd ~/.config/shaur
@@ -11,8 +13,7 @@ dbupdate () (
 )
 
 key () (
-# fix: check the format of the key (spotify gives problems)
-	key=$(grep '^validpgpkeys' -m1 < PKGBUILD | tr -d "validgpkeys=()")
+	key=$(grep '^validpgpkeys' < PKG | cut -d"(" -f2 | cut -d")" -f1)
 	[ "$key" ] && gpg --recv-keys "$key"
 )
 

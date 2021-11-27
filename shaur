@@ -2,12 +2,32 @@
 
 set -e
 
-mkdir -p ~/.config/shaur && cd ~/.config/shaur || exit
+mkdir -p ~/.config/shaur && cd ~/.config/shaur
 
 dbupdate () (
 	echo "[AUR database update]"
 	curl -s --url 'https://aur.archlinux.org/packages.gz' --create-dirs --output "packages.gz" >/dev/null && gunzip -f "packages.gz"
 	sort -o packages packages
+)
+
+key () (
+# fix: check the format of the key (spotify gives problems)
+	key=$(grep '^validpgpkeys' -m1 < PKGBUILD | tr -d "validgpkeys=()")
+	[ "$key" ] && gpg --recv-keys "$key"
+)
+
+downloadPackage () (
+	[ -d "$1" ] && rm -rf "$1"
+	git clone "https://aur.archlinux.org/$1.git" >/dev/null
+)
+
+installPackage () (
+	cd "$1" && key && makepkg -si
+)
+
+upgradePackage () (
+# fix: sometimes there is no zst file, in the cloned folder (upgrade)
+	cd "$1" && sudo pacman -U -- *.zst
 )
 
 upgrade () (
@@ -25,16 +45,11 @@ upgrade () (
 			echo "[$name] $version to -> $vRemote"
 			
 			PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq -r '.PackageBase')
-			
+
 			if [ "$PackageBase" ]; then
-				[ -d "$PackageBase" ] && rm -rf "$PackageBase"
-				git clone "https://aur.archlinux.org/$PackageBase.git" || exit
-				cd "$PackageBase" || exit
-
-				# improve
-				sudo pacman -U -- *.zst
-
-				cd ..
+				downloadPackage "$PackageBase" && upgradePackage "$PackageBase"
+			else
+				echo "ERROR 404: $name NOT FOUND..."
 			fi
 		fi
 	done < AurInstalled
@@ -53,15 +68,11 @@ sync () (
 
 	for i in $name; do
 		PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$i" | jq '.results[]' | jq "select(.Name==\"$i\")" | jq -r '.PackageBase')
+		
 		if [ "$PackageBase" ]; then
-			[ -d "$PackageBase" ] && rm -rf "$PackageBase"
-			git clone https://aur.archlinux.org/"$PackageBase".git || exit
-			cd "$PackageBase" || exit
-			key=$(grep '^validpgpkeys' -m1 < PKGBUILD | tr -d "validgpkeys=()")
-			[ "$key" ] && gpg --recv-keys "$key"
-			makepkg -si
+			downloadPackage "$PackageBase" && installPackage "$PackageBase"
 		else
-			echo "ERROR 404: $i PACKAGES NOT FOUND..."
+			echo "ERROR 404: $name NOT FOUND..."
 		fi
 	done
 )

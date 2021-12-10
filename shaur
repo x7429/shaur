@@ -13,8 +13,9 @@ dbupdate () (
 )
 
 key () (
-	key=$(grep '^validpgpkeys' < PKG | cut -d"(" -f2 | cut -d")" -f1)
-	[ "$key" ] && gpg --recv-keys "$key"
+	#key=$(grep '^validpgpkeys' < PKG | cut -d"(" -f2 | cut -d")" -f1)
+	#[ "$key" ] && gpg --recv-keys "$key"
+	echo " "
 )
 
 downloadPackage () (
@@ -28,7 +29,7 @@ installPackage () (
 
 upgradePackage () (
 # fix: sometimes there is no zst file, in the cloned folder (upgrade)
-	cd "$1" && sudo pacman -U -- *.zst
+	cd "$1" && sudo pacman -U -- *.zst || makepkg -si 
 )
 
 upgrade () (

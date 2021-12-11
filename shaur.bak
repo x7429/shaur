@@ -13,8 +13,8 @@ dbupdate () (
 )
 
 key () (
-	key=$(grep '^validpgpkeys' < PKGBUILD | cut -d"(" -f2 | cut -d")" -f1)
-	[ "$key" ] && gpg --recv-keys "$key"
+	#key=$(grep '^validpgpkeys' < PKGBUILD | cut -d"(" -f2 | cut -d")" -f1)
+	#[ "$key" ] && gpg --recv-keys "$key"
 )
 
 downloadPackage () (

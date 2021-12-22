@@ -25,8 +25,7 @@ installPackage () (
 )
 
 upgradePackage () (
-	# fix: sometimes there is no zst file, in the cloned folder (upgrade)
-	cd "$1" && (sudo pacman -U -- *.zst; makepkg -si)
+	cd "$1" && (sudo pacman -U -- *.zst || makepkg -si)
 )
 
 upgrade () (

@@ -1,7 +1,5 @@
 #!/bin/sh
 
-# upgradePackage
-
 set -e
 
 mkdir -p ~/.config/shaur && cd ~/.config/shaur
@@ -13,8 +11,8 @@ dbupdate () (
 )
 
 key () (
-	key=$(grep '^validpgpkeys' < PKGBUILD | cut -d"(" -f2 | cut -d")" -f1)
-	[ "$key" ] && gpg --recv-keys "$key"
+	key=$(grep '^validpgpkeys' < PKGBUILD | cut -d"(" -f2  | cut -d")" -f1 | tr -d "'")
+	if [ "$key" ]; then gpg --recv-keys "$key"; fi
 )
 
 downloadPackage () (
@@ -23,12 +21,12 @@ downloadPackage () (
 )
 
 installPackage () (
-	cd "$1" && key && makepkg -si
+	cd "$1" && (key; makepkg -si)
 )
 
 upgradePackage () (
-# fix: sometimes there is no zst file, in the cloned folder (upgrade)
-	cd "$1" && sudo pacman -U -- *.zst || makepkg -si 
+	# fix: sometimes there is no zst file, in the cloned folder (upgrade)
+	cd "$1" && (sudo pacman -U -- *.zst; makepkg -si)
 )
 
 upgrade () (
@@ -69,7 +67,7 @@ sync () (
 
 	for i in $name; do
 		PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$i" | jq '.results[]' | jq "select(.Name==\"$i\")" | jq -r '.PackageBase')
-		
+
 		if [ "$PackageBase" ]; then
 			downloadPackage "$PackageBase" && installPackage "$PackageBase"
 		else

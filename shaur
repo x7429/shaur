@@ -16,7 +16,8 @@ key () (
 )
 
 downloadPackage () (
-	[ -d "$1" ] && rm -rf "$1"
+	version=$(pacman -Qm | grep -i "$1" | awk '{print $2}')
+	[ -d "$1" ] && mv "$1" "$1-$version" 
 	git clone "https://aur.archlinux.org/$1.git" >/dev/null
 )
 
@@ -25,7 +26,23 @@ installPackage () (
 )
 
 upgradePackage () (
-	cd "$1" && (sudo pacman -U -- *.zst || makepkg -si)
+	cd "$1" && (sudo pacman -U -- *.zst || (cd .. && installPackage "$1"))
+)
+
+downgrade () (
+	op=$(echo "$1" | cut -d " " -f2-)
+
+        if [ "$1" = "$op" ]; then
+		ls -d */ > packInCache
+		name=$(sk -m --bind change:top --layout=reverse < packInCache)
+	else
+		name="$op"
+	fi
+	for i in $name; do
+		echo "$i"	
+		installPackage "$i"
+#		cd ..
+	done
 )
 
 upgrade () (
@@ -144,6 +161,7 @@ Operations:
 case $1 in
 	-y | --dbupdate) dbupdate ;;
 	-U | --upgrade) upgrade ;;
+	-D | --downgrade) downgrade "$*" ;;
 	-S | --sync) sync "$*" ;;
 	-R*| --remove) remove "$1" "$*" ;;
 	-C | --removeCache ) removeCache ;;

@@ -45,12 +45,28 @@ downgrade () (
 )
 
 upgrade () (
+	loadscreen=0
+	load[1]="loading... [#---------]"
+	load[2]="loading... [##--------]"
+	load[3]="loading... [###-------]"
+	load[4]="loading... [####------]"
+	load[5]="loading... [#####-----]"
+	load[6]="loading... [######----]"
+	load[7]="loading... [#######---]"
+	load[8]="loading... [########--]"
+	load[9]="loading... [#########-]"
+	load[10]="loading... [##########]"
 	dbupdate
 	
 	pacman -Qm > AurInstalled
 	sort -o AurInstalled AurInstalled
-
+	numPack=$(cat "AurInstalled" | wc -l)
+	doLoad=$(( 100 / $numPack + 1 ))
+	nextLoad=0;
 	while read -r x; do
+		nextLoad=$nextLoad+$doLoad	
+		loaded=$(( nextLoad / 10 ))
+		echo -ne "\e[96m ${load[$loaded]} \033[0K\r" #${load[$doLoad]}
 		name=$(echo "$x" | awk '{print $1}')
 		version=$(echo "$x" | awk '{print $2}')
 		vRemote=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq -r '.Version')

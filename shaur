@@ -17,7 +17,6 @@ key () (
 
 downloadPackage () (
 	version=$(pacman -Qm | grep -i "$1" | awk '{print $2}')
-	[ -d "$1" ] && mv "$1" "$1-$version" 
 	git clone "https://aur.archlinux.org/$1.git" >/dev/null
 )
 
@@ -63,6 +62,8 @@ upgrade () (
 
 			if [ "$PackageBase" ]; then
 				downloadPackage "$PackageBase" && upgradePackage "$PackageBase"
+				version=$(pacman -Qm | grep -i "$PackageBase" | awk '{print $2}')
+				mv "$PackageBase" "$PackageBase-$version"
 			else
 				echo "ERROR 404: $name NOT FOUND..."
 			fi
@@ -80,12 +81,32 @@ sync () (
 	else
 		name="$op"
 	fi
-
-	for i in $name; do
+	for i in $name; do	
+		pacman -Qqm > AurInstalled
+		sort -o AurInstalled AurInstalled
 		PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$i" | jq '.results[]' | jq "select(.Name==\"$i\")" | jq -r '.PackageBase')
-
+		
 		if [ "$PackageBase" ]; then
-			downloadPackage "$PackageBase" && installPackage "$PackageBase"
+			if [ $(cat AurInstalled | grep -i $PackageBase) ]; then
+				echo "package already installed. do you want to reinstall it? [y/N]: "
+				read -r rep
+	
+				case $rep in
+					([y]|[Y]|"")
+					version=$(pacman -Qm | grep -i "$PackageBase" | awk '{print $2}')
+					downloadPackage "$PackageBase" && installPackage "$PackageBase"
+					if [ -d "$PackageBase-$version" ]; then
+						rm -rf "$PackageBase-$version"
+					fi
+					mv "$PackageBase" "$PackageBase-$version"
+				;;
+				(*) exit ;;
+				esac
+			else
+				downloadPackage "$PackageBase" && installPackage "$PackageBase"
+				version=$(pacman -Qm | grep -i "$PackageBase" | awk '{print $2}')
+				mv "$PackageBase" "$PackageBase-$version" 
+			fi
 		else
 			echo "ERROR 404: $name NOT FOUND..."
 		fi

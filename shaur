@@ -130,7 +130,7 @@ remove () {
 }
 
 removeCache () {
-	echo "Cache directory: ~/config/shaur"
+	echo "Cache directory: ~/.config/shaur"
 	printf "do you want to remove ALL cached packages? [y/N]: "
 	read -r rep
 

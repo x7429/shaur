@@ -46,6 +46,7 @@ downgrade () (
 
 upgrade () (
 	loadscreen=0
+	load[0]="loading... [----------]"
 	load[1]="loading... [#---------]"
 	load[2]="loading... [##--------]"
 	load[3]="loading... [###-------]"
@@ -66,7 +67,7 @@ upgrade () (
 	while read -r x; do
 		nextLoad=$nextLoad+$doLoad	
 		loaded=$(( nextLoad / 10 ))
-		echo -ne "\e[96m ${load[$loaded]} \033[0K\r" #${load[$doLoad]}
+		echo -ne "\e[96m${load[$loaded]} $(( $nextLoad - $doLoad))% \033[0K\r" #${load[$doLoad]}
 		name=$(echo "$x" | awk '{print $1}')
 		version=$(echo "$x" | awk '{print $2}')
 		vRemote=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq -r '.Version')
@@ -85,6 +86,7 @@ upgrade () (
 			fi
 		fi
 	done < AurInstalled
+	echo -ne "FULL [##########] 100"
 )
 
 sync () (
@@ -103,12 +105,15 @@ sync () (
 		PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$i" | jq '.results[]' | jq "select(.Name==\"$i\")" | jq -r '.PackageBase')
 		
 		if [ "$PackageBase" ]; then
+			if [ -d "$PackageBase" ]; then
+				rm -rf "$PackageBase"
+			fi
 			if [ $(cat AurInstalled | grep -i $PackageBase) ]; then
 				echo "package already installed. do you want to reinstall it? [y/N]: "
 				read -r rep
 	
 				case $rep in
-					([y]|[Y]|"")
+				([y]|[Y]|"")
 					version=$(pacman -Qm | grep -i "$PackageBase" | awk '{print $2}')
 					downloadPackage "$PackageBase" && installPackage "$PackageBase"
 					if [ -d "$PackageBase-$version" ]; then
@@ -116,7 +121,7 @@ sync () (
 					fi
 					mv "$PackageBase" "$PackageBase-$version"
 				;;
-				(*) exit ;;
+				(*) ;;
 				esac
 			else
 				downloadPackage "$PackageBase" && installPackage "$PackageBase"

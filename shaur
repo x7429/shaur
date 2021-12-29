@@ -4,6 +4,10 @@ set -e
 
 mkdir -p ~/.config/shaur && cd ~/.config/shaur
 
+checkNet () (
+	ping -c1 -W 2 google.com >& /dev/null || exit
+)
+
 dbupdate () (
 	echo "[AUR database update]"
 	curl -s --url 'https://aur.archlinux.org/packages.gz' --create-dirs --output "packages.gz" >/dev/null && gunzip -f "packages.gz"
@@ -78,11 +82,14 @@ upgrade () (
 			PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq -r '.PackageBase')
 
 			if [ "$PackageBase" ]; then
-				downloadPackage "$PackageBase" && upgradePackage "$PackageBase"
+				if [ -d "$PackageBase" ]; then
+					rm -rf "$PackageBase"
+				fi
+				downloadPackage "$PackageBase" && installPackage "$PackageBase"
 				version=$(pacman -Qm | grep -i "$PackageBase" | awk '{print $2}')
 				mv "$PackageBase" "$PackageBase-$version"
 			else
-				echo "ERROR 404: $name NOT FOUND..."
+				echo "ERROR 404: $x NOT FOUND..."
 			fi
 		fi
 	done < AurInstalled
@@ -129,7 +136,7 @@ sync () (
 				mv "$PackageBase" "$PackageBase-$version" 
 			fi
 		else
-			echo "ERROR 404: $name NOT FOUND..."
+			echo "ERROR 404: $x NOT FOUND..."
 		fi
 	done
 )
@@ -180,7 +187,7 @@ query () (
 )
 
 version () (
-	echo "shaur version: *"
+	echo "shaur version: alpha"
 )
 
 getHelp() (
@@ -201,10 +208,10 @@ Operations:
 [ ! "$*" ] && getHelp && exit
 
 case $1 in
-	-y | --dbupdate) dbupdate ;;
-	-U | --upgrade) upgrade ;;
+	-y | --dbupdate) checkNet && dbupdate ;;
+	-U | --upgrade) checkNet && upgrade ;;
 	-D | --downgrade) downgrade "$*" ;;
-	-S | --sync) sync "$*" ;;
+	-S | --sync) checkNet && sync "$*" ;;
 	-R*| --remove) remove "$1" "$*" ;;
 	-C | --removeCache ) removeCache ;;
 	-Q | --query ) query "$*" ;;

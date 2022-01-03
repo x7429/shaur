@@ -28,10 +28,6 @@ installPackage () (
 	cd "$1" && (key; makepkg -si)
 )
 
-upgradePackage () (
-	cd "$1" && (sudo pacman -U -- *.zst || (cd .. && installPackage "$1"))
-)
-
 downgrade () (
 	op=$(echo "$1" | cut -d " " -f2-)
 
@@ -43,8 +39,9 @@ downgrade () (
 	fi
 	for i in $name; do
 		echo "$i"	
-		installPackage "$i"
-#		cd ..
+		cd "$i"
+		sudo pacman -U -- *.zst
+		cd ..
 	done
 )
 
@@ -81,16 +78,13 @@ upgrade () (
 			
 			PackageBase=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq -r '.PackageBase')
 
-			if [ "$PackageBase" ]; then
-				if [ -d "$PackageBase" ]; then
-					rm -rf "$PackageBase"
-				fi
-				downloadPackage "$PackageBase" && installPackage "$PackageBase"
-				version=$(pacman -Qm | grep -i "$PackageBase" | awk '{print $2}')
-				mv "$PackageBase" "$PackageBase-$version"
-			else
-				echo "ERROR 404: $x NOT FOUND..."
+			if [ -d "$PackageBase" ]; then
+				rm -rf "$PackageBase"
 			fi
+			downloadPackage "$PackageBase"
+			installPackage "$PackageBase"
+			version=$(pacman -Qm | grep -i "$PackageBase" | awk '{print $2}')
+			mv "$PackageBase" "$PackageBase-$version"
 		fi
 	done < AurInstalled
 	echo -ne "FULL [##########] 100"
@@ -195,14 +189,15 @@ getHelp() (
 	shaur <operation> (you can use only one option) 
 
 Operations:
-	-h --help
+	-H --help
 	-U --upgrade 		
 	-S --sync
 	-R --remove
 	-C --removeCache
 	-Q --query
 	-V --version
-	-y --dbupdate"
+	-y --dbupdate
+	-D --downgrade"
 )
 
 [ ! "$*" ] && getHelp && exit
@@ -216,7 +211,7 @@ case $1 in
 	-C | --removeCache ) removeCache ;;
 	-Q | --query ) query "$*" ;;
 	-V | --version ) version ;;
-	-h | --help) getHelp ;;
+	-H | --help) getHelp ;;
 	*)
 		echo "shaur -> invalid option $*"
 		echo "Try shaur -h or --help for more information"

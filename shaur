@@ -25,7 +25,7 @@ downloadPackage () (
 )
 
 installPackage () (
-	cd "$1" && (key; makepkg -si)
+	cd "$1" && (key; makepkg --noconfirm -si)
 )
 
 downgrade () (
@@ -71,8 +71,7 @@ upgrade () (
 		echo -ne "\e[96m${load[$loaded]} $(( $nextLoad - $doLoad))% \033[0K\r" #${load[$doLoad]}
 		name=$(echo "$x" | awk '{print $1}')
 		version=$(echo "$x" | awk '{print $2}')
-		vRemote=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq -r '.Version')
-		
+		vRemote=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$name" | jq '.results[]' | jq "select(.Name==\"$name\")" | jq -r '.Version')	
 		if [ "$(vercmp "${version}" "${vRemote}")" -lt 0 ]; then
 			echo "[$name] $version to -> $vRemote"
 			
@@ -81,10 +80,16 @@ upgrade () (
 			if [ -d "$PackageBase" ]; then
 				rm -rf "$PackageBase"
 			fi
-			downloadPackage "$PackageBase"
-			installPackage "$PackageBase"
-			version=$(pacman -Qm | grep -i "$PackageBase" | awk '{print $2}')
-			mv "$PackageBase" "$PackageBase-$version"
+			if [ -d "$PackageBase"-"$vRemote" ]; then
+				cd "$PackageBase"-"$vRemote"
+				sudo pacman --noconfirm -U -- *.zst
+				cd ..
+			else
+				downloadPackage "$PackageBase"
+				installPackage "$PackageBase"
+				version=$(pacman -Qm | grep -i "$PackageBase" | awk '{print $2}')
+				mv "$PackageBase" "$PackageBase-$version"
+			fi
 		fi
 	done < AurInstalled
 	echo -ne "FULL [##########] 100"
@@ -189,7 +194,7 @@ getHelp() (
 	shaur <operation> (you can use only one option) 
 
 Operations:
-	-H --help
+	-H -h --help
 	-U --upgrade 		
 	-S --sync
 	-R --remove
@@ -211,7 +216,7 @@ case $1 in
 	-C | --removeCache ) removeCache ;;
 	-Q | --query ) query "$*" ;;
 	-V | --version ) version ;;
-	-H | --help) getHelp ;;
+	-H | -h | --help) getHelp ;;
 	*)
 		echo "shaur -> invalid option $*"
 		echo "Try shaur -h or --help for more information"
